@@ -12,9 +12,9 @@
  */
 package org.eclipse.paho.android.service;
 
-import java.util.Iterator;
-
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import java.util.Iterator;
 
 /**
  * <p>
@@ -26,7 +26,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
  * <li>When a message has been passed to the consuming entity,
  * {@link #discardArrived(String, String)} should be called.
  * <li>To recover messages which have not been definitely passed to the
- * consumer, {@link MessageStore#getAllArrivedMessages(String)} is used.
+ * consumer, {@link org.eclipse.paho.android.service.MessageStore#getAllArrivedMessages(String)} is used.
  * <li>When a clean session is started {@link #clearArrivedMessages(String)} is
  * used.
  * </ul>
@@ -68,7 +68,7 @@ interface MessageStore {
 	 * @return a unique identifier for it
 	 */
 	String storeArrived(String clientHandle, String Topic,
-						MqttMessage message);
+                        MqttMessage message);
 
 	/**
 	 * Discard a message - called when we are certain that an arrived message

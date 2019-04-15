@@ -12,6 +12,11 @@
  */
 package org.eclipse.paho.android.service;
 
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttPingSender;
+import org.eclipse.paho.client.mqttv3.internal.ClientComms;
+
 import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -24,11 +29,6 @@ import android.os.Build;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.util.Log;
-
-import org.eclipse.paho.client.mqttv3.IMqttActionListener;
-import org.eclipse.paho.client.mqttv3.IMqttToken;
-import org.eclipse.paho.client.mqttv3.MqttPingSender;
-import org.eclipse.paho.client.mqttv3.internal.ClientComms;
 
 /**
  * Default ping sender implementation on Android. It is based on AlarmManager.
@@ -70,7 +70,7 @@ class AlarmPingSender implements MqttPingSender {
     public void start() {
         String action = MqttServiceConstants.PING_SENDER
                 + comms.getClient().getClientId();
-        Log.d(TAG, "Register alarmreceiver to MqttService" + action);
+        Log.d(TAG, "Register alarmreceiver to MqttService"+ action);
         service.registerReceiver(alarmReceiver, new IntentFilter(action));
 
         pendingIntent = PendingIntent.getBroadcast(service, 0, new Intent(
@@ -83,18 +83,18 @@ class AlarmPingSender implements MqttPingSender {
     @Override
     public void stop() {
 
-        Log.d(TAG, "Unregister alarmreceiver to MqttService" + comms.getClient().getClientId());
-        if (hasStarted) {
-            if (pendingIntent != null) {
+        Log.d(TAG, "Unregister alarmreceiver to MqttService"+comms.getClient().getClientId());
+        if(hasStarted){
+            if(pendingIntent != null){
                 // Cancel Alarm.
                 AlarmManager alarmManager = (AlarmManager) service.getSystemService(Service.ALARM_SERVICE);
                 alarmManager.cancel(pendingIntent);
             }
 
             hasStarted = false;
-            try {
+            try{
                 service.unregisterReceiver(alarmReceiver);
-            } catch (IllegalArgumentException e) {
+            }catch(IllegalArgumentException e){
                 //Ignore unregister errors.
             }
         }
@@ -108,21 +108,20 @@ class AlarmPingSender implements MqttPingSender {
         AlarmManager alarmManager = (AlarmManager) service
                 .getSystemService(Service.ALARM_SERVICE);
 
-        if (Build.VERSION.SDK_INT >= 23) {
+        if(Build.VERSION.SDK_INT >= 23){
             // In SDK 23 and above, dosing will prevent setExact, setExactAndAllowWhileIdle will force
             // the device to run this task whilst dosing.
             Log.d(TAG, "Alarm scheule using setExactAndAllowWhileIdle, next: " + delayInMilliseconds);
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, nextAlarmInMilliseconds,
                     pendingIntent);
+        } else if (Build.VERSION.SDK_INT >= 19) {
+            Log.d(TAG, "Alarm scheule using setExact, delay: " + delayInMilliseconds);
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, nextAlarmInMilliseconds,
+                    pendingIntent);
+        } else {
+            alarmManager.set(AlarmManager.RTC_WAKEUP, nextAlarmInMilliseconds,
+                    pendingIntent);
         }
-//		} else if (Build.VERSION.SDK_INT >= 19) {
-//			Log.d(TAG, "Alarm scheule using setExact, delay: " + delayInMilliseconds);
-//			alarmManager.setExact(AlarmManager.RTC_WAKEUP, nextAlarmInMilliseconds,
-//					pendingIntent);
-//		} else {
-//			alarmManager.set(AlarmManager.RTC_WAKEUP, nextAlarmInMilliseconds,
-//					pendingIntent);
-//		}
     }
 
     /*
@@ -147,7 +146,7 @@ class AlarmPingSender implements MqttPingSender {
             PowerManager pm = (PowerManager) service
                     .getSystemService(Service.POWER_SERVICE);
             wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, wakeLockTag);
-            wakelock.acquire(5000);
+            wakelock.acquire();
 
             // Assign new callback to token to execute code after PingResq
             // arrives. Get another wakelock even receiver already has one,

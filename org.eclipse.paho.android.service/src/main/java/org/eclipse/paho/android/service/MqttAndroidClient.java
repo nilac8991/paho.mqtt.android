@@ -16,12 +16,14 @@
  */
 package org.eclipse.paho.android.service;
 
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -62,7 +64,7 @@ import javax.net.ssl.TrustManagerFactory;
  * Enables an android application to communicate with an MQTT server using non-blocking methods.
  * <p>
  * Implementation of the MQTT asynchronous client interface {@link IMqttAsyncClient} , using the MQTT
- * android service to actually interface with MQTT server. It provides android applications a simple programming interface to all features of the MQTT version 3.1
+ * android org.eclipse.paho.android.service to actually interface with MQTT server. It provides android applications a simple programming interface to all features of the MQTT version 3.1
  * specification including:
  * </p>
  * <ul>
@@ -88,19 +90,17 @@ public class MqttAndroidClient extends BroadcastReceiver implements
         /**
          * When {@link MqttCallback#messageArrived(String, MqttMessage)} returns, the message
          * will not be acknowledged as received, the application will have to make an acknowledgment call
-         * to {@link MqttAndroidClient} using {@link MqttAndroidClient#acknowledgeMessage(String)}
+         * to {@link org.eclipse.paho.android.service.MqttAndroidClient} using {@link org.eclipse.paho.android.service.MqttAndroidClient#acknowledgeMessage(String)}
          */
         MANUAL_ACK
     }
-
-    private static final String SERVICE_NAME = "org.eclipse.paho.android.service.MqttService";
 
     private static final int BIND_SERVICE_FLAG = 0;
 
     private static final ExecutorService pool = Executors.newCachedThreadPool();
 
     /**
-     * ServiceConnection to process when we bind to our service
+     * ServiceConnection to process when we bind to our org.eclipse.paho.android.service
      */
     private final class MyServiceConnection implements ServiceConnection {
 
@@ -108,7 +108,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
         public void onServiceConnected(ComponentName name, IBinder binder) {
             mqttService = ((MqttServiceBinder) binder).getService();
             bindedService = true;
-            // now that we have the service available, we can actually
+            // now that we have the org.eclipse.paho.android.service available, we can actually
             // connect...
             doConnect();
         }
@@ -119,20 +119,20 @@ public class MqttAndroidClient extends BroadcastReceiver implements
         }
     }
 
-    // Listener for when the service is connected or disconnected
+    // Listener for when the org.eclipse.paho.android.service is connected or disconnected
     private final MyServiceConnection serviceConnection = new MyServiceConnection();
 
     // The Android Service which will process our mqtt calls
     private MqttService mqttService;
 
     // An identifier for the underlying client connection, which we can pass to
-    // the service
+    // the org.eclipse.paho.android.service
     private String clientHandle;
 
     private Context myContext;
 
     // We hold the various tokens in a collection and pass identifiers for them
-    // to the service
+    // to the org.eclipse.paho.android.service
     private final SparseArray<IMqttToken> tokenMap = new SparseArray<>();
     private int tokenNumber = 0;
 
@@ -366,27 +366,34 @@ public class MqttAndroidClient extends BroadcastReceiver implements
     public IMqttToken connect(MqttConnectOptions options, Object userContext,
                               IMqttActionListener callback) throws MqttException {
 
-        IMqttToken token = new MqttTokenAndroid(this, userContext,
+        IMqttToken token = new org.eclipse.paho.android.service.MqttTokenAndroid(this, userContext,
                 callback);
 
         connectOptions = options;
         connectToken = token;
 
         /*
-         * The actual connection depends on the service, which we start and bind
+         * The actual connection depends on the org.eclipse.paho.android.service, which we start and bind
          * to here, but which we can't actually use until the serviceConnection
          * onServiceConnected() method has run (asynchronously), so the
          * connection itself takes place in the onServiceConnected() method
          */
-        if (mqttService == null) { // First time - must bind to the service
-            Intent serviceStartIntent = new Intent();
-            serviceStartIntent.setClassName(myContext, SERVICE_NAME);
-            Object service = myContext.startService(serviceStartIntent);
+        if (mqttService == null) { // First time - must bind to the org.eclipse.paho.android.service
+            if (isServiceRunning(org.eclipse.paho.android.service.MqttService.class)) {
+                myContext.stopService(new Intent(myContext, org.eclipse.paho.android.service.MqttService.class));
+            }
+            Intent serviceStartIntent = new Intent(myContext, org.eclipse.paho.android.service.MqttService.class);
+            Object service;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                service = myContext.startForegroundService(serviceStartIntent);
+            } else {
+                service = myContext.startService(serviceStartIntent);
+            }
             if (service == null) {
                 IMqttActionListener listener = token.getActionCallback();
                 if (listener != null) {
                     listener.onFailure(token, new RuntimeException(
-                            "cannot start service " + SERVICE_NAME));
+                            "cannot start org.eclipse.paho.android.service " + org.eclipse.paho.android.service.MqttService.class));
                 }
             }
 
@@ -404,13 +411,24 @@ public class MqttAndroidClient extends BroadcastReceiver implements
                     doConnect();
 
                     //Register receiver to show shoulder tap.
-                    if (!receiverRegistered) registerReceiver(MqttAndroidClient.this);
+                    if (!receiverRegistered)
+                        registerReceiver(org.eclipse.paho.android.service.MqttAndroidClient.this);
                 }
 
             });
         }
 
         return token;
+    }
+
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) myContext.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void registerReceiver(BroadcastReceiver receiver) {
@@ -459,7 +477,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      */
     @Override
     public IMqttToken disconnect() throws MqttException {
-        IMqttToken token = new MqttTokenAndroid(this, null,
+        IMqttToken token = new org.eclipse.paho.android.service.MqttTokenAndroid(this, null,
                 null);
         String activityToken = storeToken(token);
         mqttService.disconnect(clientHandle, null, activityToken);
@@ -486,7 +504,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      */
     @Override
     public IMqttToken disconnect(long quiesceTimeout) throws MqttException {
-        IMqttToken token = new MqttTokenAndroid(this, null,
+        IMqttToken token = new org.eclipse.paho.android.service.MqttTokenAndroid(this, null,
                 null);
         String activityToken = storeToken(token);
         mqttService.disconnect(clientHandle, quiesceTimeout, null,
@@ -515,7 +533,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
     @Override
     public IMqttToken disconnect(Object userContext,
                                  IMqttActionListener callback) throws MqttException {
-        IMqttToken token = new MqttTokenAndroid(this, userContext,
+        IMqttToken token = new org.eclipse.paho.android.service.MqttTokenAndroid(this, userContext,
                 callback);
         String activityToken = storeToken(token);
         mqttService.disconnect(clientHandle, null, activityToken);
@@ -564,7 +582,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
     @Override
     public IMqttToken disconnect(long quiesceTimeout, Object userContext,
                                  IMqttActionListener callback) throws MqttException {
-        IMqttToken token = new MqttTokenAndroid(this, userContext,
+        IMqttToken token = new org.eclipse.paho.android.service.MqttTokenAndroid(this, userContext,
                 callback);
         String activityToken = storeToken(token);
         mqttService.disconnect(clientHandle, quiesceTimeout, null,
@@ -601,7 +619,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
     /**
      * Publishes a message to a topic on the server. Takes an
      * {@link MqttMessage} message and delivers it to the server at the
-     * requested quality of service.
+     * requested quality of org.eclipse.paho.android.service.
      *
      * @param topic   to deliver the message to, for example "finance/stock/ibm".
      * @param message to deliver to the server
@@ -634,7 +652,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      * @param userContext optional object used to pass context to the callback. Use null
      *                    if not required.
      * @param callback    optional listener that will be notified when message delivery
-     *                    has completed to the requested quality of service
+     *                    has completed to the requested quality of org.eclipse.paho.android.service
      * @return token used to track and wait for the publish to complete. The
      * token will be passed to any callback that has been set.
      * @throws MqttPersistenceException when a problem occurs storing the message
@@ -666,7 +684,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      * Once this method has returned cleanly, the message has been accepted for
      * publication by the client and will be delivered on a background thread.
      * In the event the connection fails or the client stops, Messages will be
-     * delivered to the requested quality of service once the connection is
+     * delivered to the requested quality of org.eclipse.paho.android.service once the connection is
      * re-established to the server on condition that:
      * </p>
      * <ul>
@@ -726,7 +744,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      * @param userContext optional object used to pass context to the callback. Use null
      *                    if not required.
      * @param callback    optional listener that will be notified when message delivery
-     *                    has completed to the requested quality of service
+     *                    has completed to the requested quality of org.eclipse.paho.android.service
      * @return token used to track and wait for the publish to complete. The
      * token will be passed to callback methods if set.
      * @throws MqttPersistenceException when a problem occurs storing the message
@@ -752,10 +770,10 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      * Subscribe to a topic, which may include wildcards.
      *
      * @param topic the topic to subscribe to, which can include wildcards.
-     * @param qos   the maximum quality of service at which to subscribe. Messages
-     *              published at a lower quality of service will be received at
+     * @param qos   the maximum quality of org.eclipse.paho.android.service at which to subscribe. Messages
+     *              published at a lower quality of org.eclipse.paho.android.service will be received at
      *              the published QoS. Messages published at a higher quality of
-     *              service will be received using the QoS specified on the
+     *              org.eclipse.paho.android.service will be received using the QoS specified on the
      *              subscription.
      * @return token used to track and wait for the subscribe to complete. The
      * token will be passed to callback methods if set.
@@ -779,10 +797,10 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      *
      * @param topic one or more topics to subscribe to, which can include
      *              wildcards
-     * @param qos   the maximum quality of service at which to subscribe. Messages
-     *              published at a lower quality of service will be received at
+     * @param qos   the maximum quality of org.eclipse.paho.android.service at which to subscribe. Messages
+     *              published at a lower quality of org.eclipse.paho.android.service will be received at
      *              the published QoS. Messages published at a higher quality of
-     *              service will be received using the QoS specified on the
+     *              org.eclipse.paho.android.service will be received using the QoS specified on the
      *              subscription.
      * @return token used to track and wait for the subscription to complete. The
      * token will be passed to callback methods if set.
@@ -800,10 +818,10 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      * Subscribe to a topic, which may include wildcards.
      *
      * @param topic       the topic to subscribe to, which can include wildcards.
-     * @param qos         the maximum quality of service at which to subscribe. Messages
-     *                    published at a lower quality of service will be received at
+     * @param qos         the maximum quality of org.eclipse.paho.android.service at which to subscribe. Messages
+     *                    published at a lower quality of org.eclipse.paho.android.service will be received at
      *                    the published QoS. Messages published at a higher quality of
-     *                    service will be received using the QoS specified on the
+     *                    org.eclipse.paho.android.service will be received using the QoS specified on the
      *                    subscription.
      * @param userContext optional object used to pass context to the callback. Use null
      *                    if not required.
@@ -817,7 +835,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
     @Override
     public IMqttToken subscribe(String topic, int qos, Object userContext,
                                 IMqttActionListener callback) throws MqttException {
-        IMqttToken token = new MqttTokenAndroid(this, userContext,
+        IMqttToken token = new org.eclipse.paho.android.service.MqttTokenAndroid(this, userContext,
                 callback, new String[]{topic});
         String activityToken = storeToken(token);
         mqttService.subscribe(clientHandle, topic, qos, null, activityToken);
@@ -934,10 +952,10 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      *
      * @param topic       one or more topics to subscribe to, which can include
      *                    wildcards
-     * @param qos         the maximum quality of service to subscribe each topic
-     *                    at.Messages published at a lower quality of service will be
+     * @param qos         the maximum quality of org.eclipse.paho.android.service to subscribe each topic
+     *                    at.Messages published at a lower quality of org.eclipse.paho.android.service will be
      *                    received at the published QoS. Messages published at a higher
-     *                    quality of service will be received using the QoS specified on
+     *                    quality of org.eclipse.paho.android.service will be received using the QoS specified on
      *                    the subscription.
      * @param userContext optional object used to pass context to the callback. Use null
      *                    if not required.
@@ -951,7 +969,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
     @Override
     public IMqttToken subscribe(String[] topic, int[] qos, Object userContext,
                                 IMqttActionListener callback) throws MqttException {
-        IMqttToken token = new MqttTokenAndroid(this, userContext,
+        IMqttToken token = new org.eclipse.paho.android.service.MqttTokenAndroid(this, userContext,
                 callback, topic);
         String activityToken = storeToken(token);
         mqttService.subscribe(clientHandle, topic, qos, null, activityToken);
@@ -962,9 +980,9 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      * Subscribe to a topic, which may include wildcards.
      *
      * @param topicFilter     the topic to subscribe to, which can include wildcards.
-     * @param qos             the maximum quality of service at which to subscribe. Messages
-     *                        published at a lower quality of service will be received at the published
-     *                        QoS.  Messages published at a higher quality of service will be received using
+     * @param qos             the maximum quality of org.eclipse.paho.android.service at which to subscribe. Messages
+     *                        published at a lower quality of org.eclipse.paho.android.service will be received at the published
+     *                        QoS.  Messages published at a higher quality of org.eclipse.paho.android.service will be received using
      *                        the QoS specified on the subscribe.
      * @param userContext     optional object used to pass context to the callback. Use
      *                        null if not required.
@@ -985,9 +1003,9 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      * Subscribe to a topic, which may include wildcards.
      *
      * @param topicFilter     the topic to subscribe to, which can include wildcards.
-     * @param qos             the maximum quality of service at which to subscribe. Messages
-     *                        published at a lower quality of service will be received at the published
-     *                        QoS.  Messages published at a higher quality of service will be received using
+     * @param qos             the maximum quality of org.eclipse.paho.android.service at which to subscribe. Messages
+     *                        published at a lower quality of org.eclipse.paho.android.service will be received at the published
+     *                        QoS.  Messages published at a higher quality of org.eclipse.paho.android.service will be received using
      *                        the QoS specified on the subscribe.
      * @param messageListener a callback to handle incoming messages
      * @return token used to track and wait for the subscribe to complete. The token
@@ -1008,9 +1026,9 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      * subscribing to each one individually.</p>
      *
      * @param topicFilters     one or more topics to subscribe to, which can include wildcards
-     * @param qos              the maximum quality of service at which to subscribe. Messages
-     *                         published at a lower quality of service will be received at the published
-     *                         QoS.  Messages published at a higher quality of service will be received using
+     * @param qos              the maximum quality of org.eclipse.paho.android.service at which to subscribe. Messages
+     *                         published at a lower quality of org.eclipse.paho.android.service will be received at the published
+     *                         QoS.  Messages published at a higher quality of org.eclipse.paho.android.service will be received using
      *                         the QoS specified on the subscribe.
      * @param messageListeners an array of callbacks to handle incoming messages
      * @return token used to track and wait for the subscribe to complete. The token
@@ -1031,9 +1049,9 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      * subscribing to each one individually.</p>
      *
      * @param topicFilters     one or more topics to subscribe to, which can include wildcards
-     * @param qos              the maximum quality of service at which to subscribe. Messages
-     *                         published at a lower quality of service will be received at the published
-     *                         QoS.  Messages published at a higher quality of service will be received using
+     * @param qos              the maximum quality of org.eclipse.paho.android.service at which to subscribe. Messages
+     *                         published at a lower quality of org.eclipse.paho.android.service will be received at the published
+     *                         QoS.  Messages published at a higher quality of org.eclipse.paho.android.service will be received using
      *                         the QoS specified on the subscribe.
      * @param userContext      optional object used to pass context to the callback. Use
      *                         null if not required.
@@ -1046,7 +1064,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      * @see #subscribe(String[], int[], Object, IMqttActionListener)
      */
     public IMqttToken subscribe(String[] topicFilters, int[] qos, Object userContext, IMqttActionListener callback, IMqttMessageListener[] messageListeners) throws MqttException {
-        IMqttToken token = new MqttTokenAndroid(this, userContext, callback, topicFilters);
+        IMqttToken token = new org.eclipse.paho.android.service.MqttTokenAndroid(this, userContext, callback, topicFilters);
         String activityToken = storeToken(token);
         mqttService.subscribe(clientHandle, topicFilters, qos, null, activityToken, messageListeners);
 
@@ -1101,7 +1119,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
     @Override
     public IMqttToken unsubscribe(String topic, Object userContext,
                                   IMqttActionListener callback) throws MqttException {
-        IMqttToken token = new MqttTokenAndroid(this, userContext,
+        IMqttToken token = new org.eclipse.paho.android.service.MqttTokenAndroid(this, userContext,
                 callback);
         String activityToken = storeToken(token);
         mqttService.unsubscribe(clientHandle, topic, null, activityToken);
@@ -1144,11 +1162,16 @@ public class MqttAndroidClient extends BroadcastReceiver implements
     @Override
     public IMqttToken unsubscribe(String[] topic, Object userContext,
                                   IMqttActionListener callback) throws MqttException {
-        IMqttToken token = new MqttTokenAndroid(this, userContext,
+        IMqttToken token = new org.eclipse.paho.android.service.MqttTokenAndroid(this, userContext,
                 callback);
         String activityToken = storeToken(token);
         mqttService.unsubscribe(clientHandle, topic, null, activityToken);
         return token;
+    }
+
+    @Override
+    public boolean removeMessage(IMqttDeliveryToken token) throws MqttException {
+        return false;
     }
 
     /**
@@ -1302,6 +1325,10 @@ public class MqttAndroidClient extends BroadcastReceiver implements
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void reconnect() throws MqttException {
+    }
+
     /**
      * Process the results of a connection
      *
@@ -1324,7 +1351,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
         clientHandle = null; // avoid reuse!
         IMqttToken token = removeMqttToken(data);
         if (token != null) {
-            ((MqttTokenAndroid) token).notifyComplete();
+            ((org.eclipse.paho.android.service.MqttTokenAndroid) token).notifyComplete();
         }
         if (callback != null) {
             callback.connectionLost(null);
@@ -1366,10 +1393,10 @@ public class MqttAndroidClient extends BroadcastReceiver implements
             Status status = (Status) data
                     .getSerializable(MqttServiceConstants.CALLBACK_STATUS);
             if (status == Status.OK) {
-                ((MqttTokenAndroid) token).notifyComplete();
+                ((org.eclipse.paho.android.service.MqttTokenAndroid) token).notifyComplete();
             } else {
                 Exception exceptionThrown = (Exception) data.getSerializable(MqttServiceConstants.CALLBACK_EXCEPTION);
-                ((MqttTokenAndroid) token).notifyFailure(exceptionThrown);
+                ((org.eclipse.paho.android.service.MqttTokenAndroid) token).notifyFailure(exceptionThrown);
             }
         } else {
             mqttService.traceError(MqttService.TAG, "simpleAction : token is null");
@@ -1448,7 +1475,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
                     callback.messageArrived(destinationName, message);
                 }
 
-                // let the service discard the saved message details
+                // let the org.eclipse.paho.android.service discard the saved message details
             } catch (Exception e) {
                 // Swallow the exception
             }
@@ -1596,7 +1623,7 @@ public class MqttAndroidClient extends BroadcastReceiver implements
      */
     public void unregisterResources() {
         if (myContext != null && receiverRegistered) {
-            synchronized (MqttAndroidClient.this) {
+            synchronized (org.eclipse.paho.android.service.MqttAndroidClient.this) {
                 LocalBroadcastManager.getInstance(myContext).unregisterReceiver(this);
                 receiverRegistered = false;
             }

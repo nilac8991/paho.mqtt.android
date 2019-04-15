@@ -22,20 +22,20 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
  * Implementation of the IMqttDeliveryToken interface for use from within the
  * MqttAndroidClient implementation
  */
-class MqttDeliveryTokenAndroid extends MqttTokenAndroid
+class MqttDeliveryTokenAndroid extends org.eclipse.paho.android.service.MqttTokenAndroid
 		implements IMqttDeliveryToken {
 
 	// The message which is being tracked by this token
 	private MqttMessage message;
 
 	MqttDeliveryTokenAndroid(MqttAndroidClient client,
-			Object userContext, IMqttActionListener listener, MqttMessage message) {
+                             Object userContext, IMqttActionListener listener, MqttMessage message) {
 		super(client, userContext, listener);
 		this.message = message;
 	}
 
 	/**
-	 * @see org.eclipse.paho.client.mqttv3.IMqttDeliveryToken#getMessage()
+	 * @see IMqttDeliveryToken#getMessage()
 	 */
 	@Override
 	public MqttMessage getMessage() throws MqttException {

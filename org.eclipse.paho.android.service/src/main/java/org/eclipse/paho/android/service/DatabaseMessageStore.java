@@ -15,10 +15,6 @@
  */
 package org.eclipse.paho.android.service;
 
-import java.util.Iterator;
-
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -26,11 +22,15 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import java.util.Iterator;
+
 /**
  * Implementation of the {@link MessageStore} interface, using a SQLite database
  * 
  */
-class DatabaseMessageStore implements MessageStore {
+class DatabaseMessageStore implements org.eclipse.paho.android.service.MessageStore {
 
 	// TAG used for indentify trace data etc.
 	private static final String TAG = "DatabaseMessageStore";
@@ -53,7 +53,7 @@ class DatabaseMessageStore implements MessageStore {
 
 	/**
 	 * We need a SQLiteOpenHelper to handle database creation and updating
-	 * 
+	 *
 	 */
 	private static class MQTTDatabaseHelper extends SQLiteOpenHelper {
 		// TAG used for indentify trace data etc.
@@ -70,7 +70,7 @@ class DatabaseMessageStore implements MessageStore {
 
 		/**
 		 * Constructor.
-		 * 
+		 *
 		 * @param traceHandler
 		 * @param context
 		 */
@@ -81,20 +81,20 @@ class DatabaseMessageStore implements MessageStore {
 
 		/**
 		 * When the database is (re)created, create our table
-		 * 
+		 *
 		 * @param database
 		 */
 		@Override
 		public void onCreate(SQLiteDatabase database) {
 			String createArrivedTableStatement = "CREATE TABLE "
 					+ ARRIVED_MESSAGE_TABLE_NAME + "("
-					+ MqttServiceConstants.MESSAGE_ID + " TEXT PRIMARY KEY, "
-					+ MqttServiceConstants.CLIENT_HANDLE + " TEXT, "
-					+ MqttServiceConstants.DESTINATION_NAME + " TEXT, "
-					+ MqttServiceConstants.PAYLOAD + " BLOB, "
-					+ MqttServiceConstants.QOS + " INTEGER, "
-					+ MqttServiceConstants.RETAINED + " TEXT, "
-					+ MqttServiceConstants.DUPLICATE + " TEXT, " + MTIMESTAMP
+					+ org.eclipse.paho.android.service.MqttServiceConstants.MESSAGE_ID + " TEXT PRIMARY KEY, "
+					+ org.eclipse.paho.android.service.MqttServiceConstants.CLIENT_HANDLE + " TEXT, "
+					+ org.eclipse.paho.android.service.MqttServiceConstants.DESTINATION_NAME + " TEXT, "
+					+ org.eclipse.paho.android.service.MqttServiceConstants.PAYLOAD + " BLOB, "
+					+ org.eclipse.paho.android.service.MqttServiceConstants.QOS + " INTEGER, "
+					+ org.eclipse.paho.android.service.MqttServiceConstants.RETAINED + " TEXT, "
+					+ org.eclipse.paho.android.service.MqttServiceConstants.DUPLICATE + " TEXT, " + MTIMESTAMP
 					+ " INTEGER" + ");";
 			traceHandler.traceDebug(TAG, "onCreate {"
 					+ createArrivedTableStatement + "}");
@@ -109,7 +109,7 @@ class DatabaseMessageStore implements MessageStore {
 
 		/**
 		 * To upgrade the database, drop and recreate our table
-		 * 
+		 *
 		 * @param db
 		 *            the database
 		 * @param oldVersion
@@ -134,7 +134,7 @@ class DatabaseMessageStore implements MessageStore {
 
 	/**
 	 * Constructor - create a DatabaseMessageStore to store arrived MQTT message
-	 * 
+	 *
 	 * @param service
 	 *            our parent MqttService
 	 * @param context
@@ -149,13 +149,13 @@ class DatabaseMessageStore implements MessageStore {
 		// Android documentation suggests that this perhaps
 		// could/should be done in another thread, but as the
 		// database is only one table, I doubt it matters...
-		
+
 		traceHandler.traceDebug(TAG, "DatabaseMessageStore<init> complete");
 	}
 
 	/**
 	 * Store an MQTT message
-	 * 
+	 *
 	 * @param clientHandle
 	 *            identifier for the client storing the message
 	 * @param topic
@@ -167,9 +167,9 @@ class DatabaseMessageStore implements MessageStore {
 	@Override
 	public String storeArrived(String clientHandle, String topic,
 			MqttMessage message) {
-		
+
 		db = mqttDb.getWritableDatabase();
-		
+
 		traceHandler.traceDebug(TAG, "storeArrived{" + clientHandle + "}, {"
 				+ message.toString() + "}");
 
@@ -180,13 +180,13 @@ class DatabaseMessageStore implements MessageStore {
 
 		ContentValues values = new ContentValues();
 		String id = java.util.UUID.randomUUID().toString();
-		values.put(MqttServiceConstants.MESSAGE_ID, id);
-		values.put(MqttServiceConstants.CLIENT_HANDLE, clientHandle);
-		values.put(MqttServiceConstants.DESTINATION_NAME, topic);
-		values.put(MqttServiceConstants.PAYLOAD, payload);
-		values.put(MqttServiceConstants.QOS, qos);
-		values.put(MqttServiceConstants.RETAINED, retained);
-		values.put(MqttServiceConstants.DUPLICATE, duplicate);
+		values.put(org.eclipse.paho.android.service.MqttServiceConstants.MESSAGE_ID, id);
+		values.put(org.eclipse.paho.android.service.MqttServiceConstants.CLIENT_HANDLE, clientHandle);
+		values.put(org.eclipse.paho.android.service.MqttServiceConstants.DESTINATION_NAME, topic);
+		values.put(org.eclipse.paho.android.service.MqttServiceConstants.PAYLOAD, payload);
+		values.put(org.eclipse.paho.android.service.MqttServiceConstants.QOS, qos);
+		values.put(org.eclipse.paho.android.service.MqttServiceConstants.RETAINED, retained);
+		values.put(org.eclipse.paho.android.service.MqttServiceConstants.DUPLICATE, duplicate);
 		values.put(MTIMESTAMP, System.currentTimeMillis());
 		try {
 			db.insertOrThrow(ARRIVED_MESSAGE_TABLE_NAME, null, values);
@@ -208,9 +208,9 @@ class DatabaseMessageStore implements MessageStore {
 	private int getArrivedRowCount(String clientHandle) {
         int count = 0;
         String[] projection = {
-                MqttServiceConstants.MESSAGE_ID,
+                org.eclipse.paho.android.service.MqttServiceConstants.MESSAGE_ID,
         };
-  		String selection =  MqttServiceConstants.CLIENT_HANDLE + "=?";
+  		String selection =  org.eclipse.paho.android.service.MqttServiceConstants.CLIENT_HANDLE + "=?";
         String[] selectionArgs = new String[1];
         selectionArgs[0] = clientHandle;
 		Cursor c = db.query(
@@ -232,19 +232,19 @@ class DatabaseMessageStore implements MessageStore {
 
 	/**
 	 * Delete an MQTT message.
-	 * 
+	 *
 	 * @param clientHandle
 	 *            identifier for the client which stored the message
 	 * @param id
 	 *            the identifying string returned when the message was stored
-	 * 
+	 *
 	 * @return true if the message was found and deleted
 	 */
 	@Override
 	public boolean discardArrived(String clientHandle, String id) {
-		
+
 		db = mqttDb.getWritableDatabase();
-		
+
 		traceHandler.traceDebug(TAG, "discardArrived{" + clientHandle + "}, {"
 				+ id + "}");
 		int rows;
@@ -254,8 +254,8 @@ class DatabaseMessageStore implements MessageStore {
 
 		try {
 			rows = db.delete(ARRIVED_MESSAGE_TABLE_NAME,
-					MqttServiceConstants.MESSAGE_ID + "=? AND "
-							+ MqttServiceConstants.CLIENT_HANDLE + "=?",
+					org.eclipse.paho.android.service.MqttServiceConstants.MESSAGE_ID + "=? AND "
+							+ org.eclipse.paho.android.service.MqttServiceConstants.CLIENT_HANDLE + "=?",
                     selectionArgs);
 		} catch (SQLException e) {
 			traceHandler.traceException(TAG, "discardArrived", e);
@@ -278,7 +278,7 @@ class DatabaseMessageStore implements MessageStore {
 
 	/**
 	 * Get an iterator over all messages stored (optionally for a specific client)
-	 * 
+	 *
 	 * @param clientHandle
 	 *            identifier for the client.<br>
 	 *            If null, all messages are retrieved
@@ -310,7 +310,7 @@ class DatabaseMessageStore implements MessageStore {
 				} else {
 					c = db.query(ARRIVED_MESSAGE_TABLE_NAME,
                             null,
-							MqttServiceConstants.CLIENT_HANDLE + "=?",
+							org.eclipse.paho.android.service.MqttServiceConstants.CLIENT_HANDLE + "=?",
                             selectionArgs,
                             null,
                             null,
@@ -330,18 +330,18 @@ class DatabaseMessageStore implements MessageStore {
 			@Override
 			public StoredMessage next() {
 				String messageId = c.getString(c
-						.getColumnIndex(MqttServiceConstants.MESSAGE_ID));
+						.getColumnIndex(org.eclipse.paho.android.service.MqttServiceConstants.MESSAGE_ID));
 				String clientHandle = c.getString(c
-						.getColumnIndex(MqttServiceConstants.CLIENT_HANDLE));
+						.getColumnIndex(org.eclipse.paho.android.service.MqttServiceConstants.CLIENT_HANDLE));
 				String topic = c.getString(c
-						.getColumnIndex(MqttServiceConstants.DESTINATION_NAME));
+						.getColumnIndex(org.eclipse.paho.android.service.MqttServiceConstants.DESTINATION_NAME));
 				byte[] payload = c.getBlob(c
-						.getColumnIndex(MqttServiceConstants.PAYLOAD));
-				int qos = c.getInt(c.getColumnIndex(MqttServiceConstants.QOS));
+						.getColumnIndex(org.eclipse.paho.android.service.MqttServiceConstants.PAYLOAD));
+				int qos = c.getInt(c.getColumnIndex(org.eclipse.paho.android.service.MqttServiceConstants.QOS));
 				boolean retained = Boolean.parseBoolean(c.getString(c
-						.getColumnIndex(MqttServiceConstants.RETAINED)));
+						.getColumnIndex(org.eclipse.paho.android.service.MqttServiceConstants.RETAINED)));
 				boolean dup = Boolean.parseBoolean(c.getString(c
-						.getColumnIndex(MqttServiceConstants.DUPLICATE)));
+						.getColumnIndex(org.eclipse.paho.android.service.MqttServiceConstants.DUPLICATE)));
 
 				// build the result
 				MqttMessageHack message = new MqttMessageHack(payload);
@@ -373,18 +373,18 @@ class DatabaseMessageStore implements MessageStore {
 
 	/**
 	 * Delete all messages (optionally for a specific client)
-	 * 
+	 *
 	 * @param clientHandle
 	 *            identifier for the client.<br>
 	 *            If null, all messages are deleted
 	 */
 	@Override
 	public void clearArrivedMessages(String clientHandle) {
-		
+
 		db = mqttDb.getWritableDatabase();
         String[] selectionArgs = new String[1];
         selectionArgs[0] = clientHandle;
-		
+
 		int rows = 0;
 		if (clientHandle == null) {
 			traceHandler.traceDebug(TAG,
@@ -395,7 +395,7 @@ class DatabaseMessageStore implements MessageStore {
 					"clearArrivedMessages: clearing the table of "
 							+ clientHandle + " messages");
             rows = db.delete(ARRIVED_MESSAGE_TABLE_NAME,
-                    MqttServiceConstants.CLIENT_HANDLE + "=?",
+                    org.eclipse.paho.android.service.MqttServiceConstants.CLIENT_HANDLE + "=?",
                     selectionArgs);
 
 		}

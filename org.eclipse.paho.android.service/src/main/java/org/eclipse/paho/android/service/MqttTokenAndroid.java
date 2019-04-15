@@ -53,7 +53,7 @@ class MqttTokenAndroid implements IMqttToken {
    * @param listener optional listener that will be notified when the action completes. Use null if not required.
    */
   MqttTokenAndroid(MqttAndroidClient client,
-      Object userContext, IMqttActionListener listener) {
+                   Object userContext, IMqttActionListener listener) {
     this(client, userContext, listener, null);
   }
 
@@ -66,7 +66,7 @@ class MqttTokenAndroid implements IMqttToken {
    * @param topics topics to subscribe to, which can include wildcards.
    */
   MqttTokenAndroid(MqttAndroidClient client,
-      Object userContext, IMqttActionListener listener, String[] topics) {
+                   Object userContext, IMqttActionListener listener, String[] topics) {
     this.client = client;
     this.userContext = userContext;
     this.listener = listener;
@@ -74,7 +74,7 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#waitForCompletion()
+   * @see IMqttToken#waitForCompletion()
    */
   @Override
   public void waitForCompletion() throws MqttException, MqttSecurityException {
@@ -92,11 +92,11 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#waitForCompletion(long)
+   * @see IMqttToken#waitForCompletion(long)
    */
   @Override
   public void waitForCompletion(long timeout) throws MqttException,
-      MqttSecurityException {
+          MqttSecurityException {
     synchronized (waitObject) {
       try {
         waitObject.wait(timeout);
@@ -150,7 +150,7 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#isComplete()
+   * @see IMqttToken#isComplete()
    */
   @Override
   public boolean isComplete() {
@@ -162,7 +162,7 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#getException()
+   * @see IMqttToken#getException()
    */
   @Override
   public MqttException getException() {
@@ -174,7 +174,7 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#getClient()
+   * @see IMqttToken#getClient()
    */
   @Override
   public IMqttAsyncClient getClient() {
@@ -182,7 +182,7 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#setActionCallback(IMqttActionListener)
+   * @see IMqttToken#setActionCallback(IMqttActionListener)
    */
   @Override
   public void setActionCallback(IMqttActionListener listener) {
@@ -190,7 +190,7 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#getActionCallback()
+   * @see IMqttToken#getActionCallback()
    */
   @Override
   public IMqttActionListener getActionCallback() {
@@ -198,7 +198,7 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#getTopics()
+   * @see IMqttToken#getTopics()
    */
   @Override
   public String[] getTopics() {
@@ -206,7 +206,7 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#setUserContext(Object)
+   * @see IMqttToken#setUserContext(Object)
    */
   @Override
   public void setUserContext(Object userContext) {
@@ -215,7 +215,7 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#getUserContext()
+   * @see IMqttToken#getUserContext()
    */
   @Override
   public Object getUserContext() {
@@ -227,7 +227,7 @@ class MqttTokenAndroid implements IMqttToken {
   }
 
   /**
-   * @see org.eclipse.paho.client.mqttv3.IMqttToken#getMessageId()
+   * @see IMqttToken#getMessageId()
    */
   @Override
   public int getMessageId() {

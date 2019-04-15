@@ -122,7 +122,7 @@ class MqttConnection implements MqttCallbackExtended {
 
     private AlarmPingSender alarmPingSender = null;
 
-    // our (parent) service object
+    // our (parent) org.eclipse.paho.android.service object
     private MqttService service = null;
 
     private volatile boolean disconnected = true;
@@ -148,7 +148,7 @@ class MqttConnection implements MqttCallbackExtended {
     /**
      * Constructor - create an MqttConnection to communicate with MQTT server
      *
-     * @param service      our "parent" service - we make callbacks to it
+     * @param service      our "parent" org.eclipse.paho.android.service - we make callbacks to it
      * @param serverURI    the URI of the MQTT server to which we will connect
      * @param clientId     the name by which we will identify ourselves to the MQTT
      *                     server
@@ -481,7 +481,7 @@ class MqttConnection implements MqttCallbackExtended {
      * @param topic             the topic on which to publish - represented as a string, not
      *                          an MqttTopic object
      * @param payload           the content of the message to publish
-     * @param qos               the quality of service requested
+     * @param qos               the quality of org.eclipse.paho.android.service requested
      * @param retained          whether the MQTT server should retain this message
      * @param invocationContext arbitrary data to be passed back to the application
      * @param activityToken     arbitrary string to be passed back to the activity
@@ -584,7 +584,7 @@ class MqttConnection implements MqttCallbackExtended {
      * Subscribe to a topic
      *
      * @param topic             a possibly wildcarded topic name
-     * @param qos               requested quality of service for the topic
+     * @param qos               requested quality of org.eclipse.paho.android.service for the topic
      * @param invocationContext arbitrary data to be passed back to the application
      * @param activityToken     arbitrary identifier to be passed back to the Activity
      */
@@ -621,7 +621,7 @@ class MqttConnection implements MqttCallbackExtended {
      * Subscribe to one or more topics
      *
      * @param topic             a list of possibly wildcarded topic names
-     * @param qos               requested quality of service for each topic
+     * @param qos               requested quality of org.eclipse.paho.android.service for each topic
      * @param invocationContext arbitrary data to be passed back to the application
      * @param activityToken     arbitrary identifier to be passed back to the Activity
      */
@@ -902,14 +902,17 @@ class MqttConnection implements MqttCallbackExtended {
      * Acquires a partial wake lock for this client
      */
     private void acquireWakeLock() {
-        if (wakelock == null) {
-            PowerManager pm = (PowerManager) service
-                    .getSystemService(Service.POWER_SERVICE);
-            wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                    wakeLockTag);
+        if (wakelock != null && !wakelock.isHeld()) {
+            wakelock.acquire(500);
+            return;
+        } else if (wakelock != null && wakelock.isHeld()) {
+            wakelock.release();
         }
-        wakelock.acquire();
-
+        PowerManager pm = (PowerManager) service
+                .getSystemService(Service.POWER_SERVICE);
+        wakelock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                wakeLockTag);
+        wakelock.acquire(500);
     }
 
     /**
@@ -1004,7 +1007,7 @@ class MqttConnection implements MqttCallbackExtended {
                 myClient.reconnect();
             } catch (MqttException ex) {
                 Log.e(TAG, "Exception occurred attempting to reconnect: " + ex.getMessage());
-                ex.printStackTrace();
+//                ex.printStackTrace();
                 setConnectingState(false);
                 handleException(resultBundle, ex);
             }

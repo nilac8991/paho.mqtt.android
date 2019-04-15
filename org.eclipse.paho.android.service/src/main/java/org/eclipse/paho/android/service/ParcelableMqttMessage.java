@@ -12,10 +12,10 @@
  */
 package org.eclipse.paho.android.service;
 
-import org.eclipse.paho.client.mqttv3.MqttMessage;
-
 import android.os.Parcel;
 import android.os.Parcelable;
+
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 /**
  * <p>
@@ -97,23 +97,23 @@ public class ParcelableMqttMessage extends MqttMessage implements Parcelable {
 	/**
 	 * A creator which creates the message object from a parcel
 	 */
-	public static final Parcelable.Creator<ParcelableMqttMessage> CREATOR = new Parcelable.Creator<ParcelableMqttMessage>() {
+	public static final Creator<org.eclipse.paho.android.service.ParcelableMqttMessage> CREATOR = new Creator<org.eclipse.paho.android.service.ParcelableMqttMessage>() {
 
 		/**
 		 * Creates a message from the parcel object
 		 */
 		@Override
-		public ParcelableMqttMessage createFromParcel(Parcel parcel) {
-			return new ParcelableMqttMessage(parcel);
+		public org.eclipse.paho.android.service.ParcelableMqttMessage createFromParcel(Parcel parcel) {
+			return new org.eclipse.paho.android.service.ParcelableMqttMessage(parcel);
 		}
 
 		/**
-		 * creates an array of type {@link ParcelableMqttMessage}[]
+		 * creates an array of type {@link org.eclipse.paho.android.service.ParcelableMqttMessage}[]
 		 * 
 		 */
 		@Override
-		public ParcelableMqttMessage[] newArray(int size) {
-			return new ParcelableMqttMessage[size];
+		public org.eclipse.paho.android.service.ParcelableMqttMessage[] newArray(int size) {
+			return new org.eclipse.paho.android.service.ParcelableMqttMessage[size];
 		}
 	};
 }

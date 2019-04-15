@@ -14,7 +14,7 @@ package org.eclipse.paho.android.service;
 
 /**
  * Various strings used to identify operations or data in the Android MQTT
- * service, mainly used in Intents passed between Activities and the Service.
+ * org.eclipse.paho.android.service, mainly used in Intents passed between Activities and the Service.
  */
 interface MqttServiceConstants {
 
@@ -79,10 +79,10 @@ interface MqttServiceConstants {
                                               + ".ERROR_NUMBER";
 
   String CALLBACK_EXCEPTION = MqttService.TAG + ".exception";
-  
+
   //Intent prefix for Ping sender.
   String PING_SENDER = MqttService.TAG + ".pingSender.";
-  
+
   //Constant for wakelock
   String PING_WAKELOCK = MqttService.TAG + ".client.";
   String WAKELOCK_NETWORK_INTENT = MqttService.TAG + "";

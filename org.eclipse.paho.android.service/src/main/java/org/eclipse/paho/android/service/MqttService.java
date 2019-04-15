@@ -25,8 +25,6 @@ import android.net.NetworkInfo;
 import android.net.NetworkRequest;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.os.PowerManager;
-import android.os.PowerManager.WakeLock;
 import android.support.v4.content.LocalBroadcastManager;
 
 import org.eclipse.paho.client.mqttv3.DisconnectedBufferOptions;
@@ -44,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>
- * The android service which interfaces with an MQTT client implementation
+ * The android org.eclipse.paho.android.service which interfaces with an MQTT client implementation
  * </p>
  * <p>
  * The main API of MqttService is intended to pretty much mirror the
@@ -65,8 +63,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * to them.
  * </p>
  * <p>
- * Activities using this service are expected to start it and bind to it using
- * the BIND_AUTO_CREATE flag. The life cycle of this service is based on this
+ * Activities using this org.eclipse.paho.android.service are expected to start it and bind to it using
+ * the BIND_AUTO_CREATE flag. The life cycle of this org.eclipse.paho.android.service is based on this
  * approach.
  * </p>
  * <p>
@@ -199,7 +197,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * <td align="left" valign="top">String</td>
  * <td align="left" valign="top">The identifier for the message in the message
  * store, used by the Activity to acknowledge the arrival of the message, so
- * that the service may remove it from the store</td>
+ * that the org.eclipse.paho.android.service may remove it from the store</td>
  * <td align="left" valign="top">The Message Arrived event</td>
  * </tr>
  * <tr>
@@ -362,8 +360,8 @@ public class MqttService extends Service implements MqttTraceHandler {
         connections.remove(clientHandle);
 
 
-        // the activity has finished using us, so we can stop the service
-        // the activities are bound with BIND_AUTO_CREATE, so the service will
+        // the activity has finished using us, so we can stop the org.eclipse.paho.android.service
+        // the activities are bound with BIND_AUTO_CREATE, so the org.eclipse.paho.android.service will
         // remain around until the last activity disconnects
         stopSelf();
     }
@@ -382,8 +380,8 @@ public class MqttService extends Service implements MqttTraceHandler {
         client.disconnect(quiesceTimeout, invocationContext, activityToken);
         connections.remove(clientHandle);
 
-        // the activity has finished using us, so we can stop the service
-        // the activities are bound with BIND_AUTO_CREATE, so the service will
+        // the activity has finished using us, so we can stop the org.eclipse.paho.android.service
+        // the activities are bound with BIND_AUTO_CREATE, so the org.eclipse.paho.android.service will
         // remain around until the last activity disconnects
         stopSelf();
     }
@@ -405,7 +403,7 @@ public class MqttService extends Service implements MqttTraceHandler {
      * @param clientHandle      identifies the MqttConnection to use
      * @param topic             the topic to which to publish
      * @param payload           the content of the message to publish
-     * @param qos               the quality of service requested
+     * @param qos               the quality of org.eclipse.paho.android.service requested
      * @param retained          whether the MQTT server should retain this message
      * @param invocationContext arbitrary data to be passed back to the application
      * @param activityToken     arbitrary identifier to be passed back to the Activity
@@ -446,7 +444,7 @@ public class MqttService extends Service implements MqttTraceHandler {
      *
      * @param clientHandle      identifies the MqttConnection to use
      * @param topic             a possibly wildcarded topic name
-     * @param qos               requested quality of service for the topic
+     * @param qos               requested quality of org.eclipse.paho.android.service for the topic
      * @param invocationContext arbitrary data to be passed back to the application
      * @param activityToken     arbitrary identifier to be passed back to the Activity
      */
@@ -461,7 +459,7 @@ public class MqttService extends Service implements MqttTraceHandler {
      *
      * @param clientHandle      identifies the MqttConnection to use
      * @param topic             a list of possibly wildcarded topic names
-     * @param qos               requested quality of service for each topic
+     * @param qos               requested quality of org.eclipse.paho.android.service for each topic
      * @param invocationContext arbitrary data to be passed back to the application
      * @param activityToken     arbitrary identifier to be passed back to the Activity
      */
@@ -476,7 +474,7 @@ public class MqttService extends Service implements MqttTraceHandler {
      *
      * @param clientHandle      identifies the MqttConnection to use
      * @param topicFilters      a list of possibly wildcarded topicfilters
-     * @param qos               requested quality of service for each topic
+     * @param qos               requested quality of org.eclipse.paho.android.service for each topic
      * @param invocationContext arbitrary data to be passed back to the application
      * @param activityToken     arbitrary identifier to be passed back to the Activity
      * @param messageListeners  a callback to handle incoming messages
@@ -558,7 +556,7 @@ public class MqttService extends Service implements MqttTraceHandler {
     // Extend Service
 
     /**
-     * @see android.app.Service#onCreate()
+     * @see Service#onCreate()
      */
     @Override
     public void onCreate() {
@@ -575,7 +573,7 @@ public class MqttService extends Service implements MqttTraceHandler {
 
 
     /**
-     * @see android.app.Service#onDestroy()
+     * @see Service#onDestroy()
      */
     @Override
     public void onDestroy() {
@@ -598,7 +596,7 @@ public class MqttService extends Service implements MqttTraceHandler {
     }
 
     /**
-     * @see android.app.Service#onBind(Intent)
+     * @see Service#onBind(Intent)
      */
     @Override
     public IBinder onBind(Intent intent) {
@@ -612,7 +610,7 @@ public class MqttService extends Service implements MqttTraceHandler {
     }
 
     /**
-     * @see android.app.Service#onStartCommand(Intent, int, int)
+     * @see Service#onStartCommand(Intent, int, int)
      */
     @Override
     public int onStartCommand(final Intent intent, int flags, final int startId) {
@@ -713,7 +711,9 @@ public class MqttService extends Service implements MqttTraceHandler {
     }
 
     private void unregisterNetworkReceiver() {
-        connectivityManager.unregisterNetworkCallback(networkCallback);
+        if(connectivityManager != null && networkCallback != null){
+            connectivityManager.unregisterNetworkCallback(networkCallback);
+        }
     }
 
     private ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
@@ -733,9 +733,9 @@ public class MqttService extends Service implements MqttTraceHandler {
         // we protect against the phone switching off
         // by requesting a wake lock - we request the minimum possible wake
         // lock - just enough to keep the CPU running until we've finished
-        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-        WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, MqttService.class.getName());
-        wl.acquire();
+//        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
+//        WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, MqttService.class.getName());
+//        wl.acquire();
         traceDebug(TAG, "Reconnect for Network recovery.");
         if (isOnline()) {
             traceDebug(TAG, "Online,reconnect.");
@@ -746,7 +746,7 @@ public class MqttService extends Service implements MqttTraceHandler {
     }
 
     /**
-     * @return whether the android service can be regarded as online
+     * @return whether the android org.eclipse.paho.android.service can be regarded as online
      */
     public boolean isOnline() {
         ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
